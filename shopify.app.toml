@@ -1,0 +1,18 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "79bb477bc156864045bd02066be16cc8"
+name = "updated-review-widget "
+application_url = "http://localhost:3000"
+embedded = false
+
+[webhooks]
+api_version = "2025-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products"
+optional_scopes = [ "read_customers" ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
