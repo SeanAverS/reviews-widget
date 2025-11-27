@@ -1,11 +1,22 @@
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+app.use(
+  cors({
+    origin: "http://localhost:3001",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
+
+app.use(express.json());
 
 // fetch product data
 app.get("/reviews/:productId", async (req, res) => {
