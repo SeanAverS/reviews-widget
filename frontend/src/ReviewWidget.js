@@ -8,8 +8,7 @@ export default function ReviewWidget({ productId }) {
   useEffect(() => {
     async function fetchRatings() {
       try {
-        const res = await fetch(`http://localhost:3000/reviews/${productId}`);
-        const data = await res.json();
+        const res = await fetch(`https://nonhuman-kathryn-topazine.ngrok-free.dev/reviews/${productId}`);
 
         setAvgRating(data.avgRating || 0);
         setCount(data.starRatings.length || 0);
