@@ -1,0 +1,13 @@
+<div id="reviews-widget-container"
+     data-product-id="{{ product.id }}">
+</div>
+
+<script src="{{ 'reviews-widget.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Reviews Widget",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
