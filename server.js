@@ -107,8 +107,10 @@ app.get("/reviews/:productId", async (req, res) => {
     const metafieldData = await metafieldResponse.json();
     console.log("Metafields:", metafieldData);
 
-    // extract product star rating 
-    const starField = metafieldData.metafields.find(
+    // make sure metafields exists
+    const metafields = metafieldData.metafields || [];
+
+    const starField = metafields.find(
       (field) => field.namespace === "custom" && field.key === "star_ratings"
     );
 
@@ -124,5 +126,6 @@ app.get("/reviews/:productId", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
