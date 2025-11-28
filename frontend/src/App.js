@@ -2,7 +2,7 @@ import './App.css';
 import ReviewWidget from './ReviewWidget';
 
 function App() {
-  const exampleProductId = "8330512924833";
+  const exampleProductId = "8352823935137"; 
 
   return (
     <div className="App">
