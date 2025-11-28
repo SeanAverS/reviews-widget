@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadRating() {
     try {
-      const res = await fetch(`http://localhost:3000/reviews/${productId}`);
+      const res = await fetch(`https://nonhuman-kathryn-topazine.ngrok-free.dev/reviews/${productId}`);
       const data = await res.json();
 
       const avg = data.avgRating || 0;
