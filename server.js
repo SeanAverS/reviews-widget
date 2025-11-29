@@ -87,6 +87,12 @@ app.get("/auth/callback", async (req, res) => {
 
 // Fetch star ratings with OAuth token 
 app.get("/reviews/:productId", async (req, res) => {
+  res.set({
+    "Cache-Control": "no-store",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  });
+  
   const { productId } = req.params;
   const token = app.locals.shopToken;
   const shop = "sean-dev-2.myshopify.com";
