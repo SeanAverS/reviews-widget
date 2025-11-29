@@ -7,7 +7,7 @@ import fs from "fs";
 
 dotenv.config();
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // load saved token on startup
 let savedToken = null;
@@ -92,7 +92,7 @@ app.get("/reviews/:productId", async (req, res) => {
     "Pragma": "no-cache",
     "Expires": "0",
   });
-  
+
   const { productId } = req.params;
   const token = app.locals.shopToken;
   const shop = "sean-dev-2.myshopify.com";
@@ -134,4 +134,5 @@ app.get("/reviews/:productId", async (req, res) => {
 });
 
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
