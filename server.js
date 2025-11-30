@@ -22,6 +22,16 @@ app.use(
 
 app.use(express.json());
 
+// OAuth after Shopify installion
+app.get("/", (req, res) => {
+    const shop = req.query.shop;
+    if (shop) {
+        res.redirect(`/auth?shop=${shop}`); 
+    } else {
+        res.status(400).send("Missing shop parameter.");
+    }
+});
+
 // OAuth for store owner 
 app.get("/auth", (req, res) => {
   const shop = req.query.shop;
@@ -58,6 +68,7 @@ app.get("/auth/callback", async (req, res) => {
 
     const tokenData = await tokenResponse.json();
     app.locals.shopToken = tokenData.access_token;
+    app.locals.shopDomain = shop;
 
     res.send("App installed! Reviews endpoint now working.");
   } catch (err) {
@@ -76,7 +87,7 @@ app.get("/reviews/:productId", async (req, res) => {
 
   const { productId } = req.params;
   const token = app.locals.shopToken;
-  const shop = "sean-dev-2.myshopify.com";
+  const shop = app.locals.shopDomain; 
 
   if (!token) return res.status(400).send("Install app first via /auth");
 
