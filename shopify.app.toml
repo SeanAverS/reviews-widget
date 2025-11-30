@@ -2,7 +2,7 @@
 
 client_id = "79bb477bc156864045bd02066be16cc8"
 name = "updated-review-widget "
-application_url = "http://localhost:3000"
+application_url = "https://reviews-widget-production.up.railway.app"
 embedded = false
 
 [webhooks]
@@ -15,4 +15,4 @@ optional_scopes = [ "read_customers" ]
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ ]
+redirect_urls = [ "https://reviews-widget-production.up.railway.app/auth/callback" ]
