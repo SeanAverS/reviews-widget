@@ -28,7 +28,7 @@ app.get("/auth", (req, res) => {
   if (!shop) return res.status(400).send("Missing shop parameter");
 
   const scopes = "read_products,write_products";
-  const redirectUri = `http://localhost:${PORT}/auth/callback`;
+  const redirectUri = `https://reviews-widget-production.up.railway.app/auth/callback`;
   const state = crypto.randomBytes(16).toString("hex");
 
   const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
