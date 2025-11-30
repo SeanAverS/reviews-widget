@@ -3,7 +3,6 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
 import crypto from "crypto";
-import fs from "fs";
 
 dotenv.config();
 const app = express();
@@ -11,16 +10,6 @@ const PORT = process.env.PORT || 3000;
 
 // load saved token on startup
 let savedToken = null;
-try {
-  if (fs.existsSync("token.json")) {
-    const file = JSON.parse(fs.readFileSync("token.json", "utf8"));
-    savedToken = file.access_token;
-    console.log("Loaded saved OAuth token.");
-  }
-} catch (err) {
-  console.error("Failed to load token.json:", err);
-}
-
 app.locals.shopToken = savedToken;
 
 app.use(
@@ -69,14 +58,6 @@ app.get("/auth/callback", async (req, res) => {
 
     const tokenData = await tokenResponse.json();
     app.locals.shopToken = tokenData.access_token;
-
-    // Save token in token.json for future startups
-    try {
-      fs.writeFileSync("token.json", JSON.stringify(tokenData, null, 2));
-      console.log("Saved OAuth token to token.json");
-    } catch (err) {
-      console.error("Failed to save token.json:", err);
-    }
 
     res.send("App installed! Reviews endpoint now working.");
   } catch (err) {
