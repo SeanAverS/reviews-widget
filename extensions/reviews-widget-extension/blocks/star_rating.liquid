@@ -1,9 +1,12 @@
 {% comment %} Access "Average Rating" metafield {% endcomment %}
 {% assign avg_rating = block.settings.product.metafields.reviews.average_rating.value %}
 
+{% assign rounded_rating = avg_rating | round %}
+
 <span style="color:{{ block.settings.colour }}">
-  {% render 'stars', rating: avg_rating | round %}
+  {% render 'stars', rating: rounded_rating %}
 </span>
+
 {% if avg_rating >= 4 %}
   <br>
   <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
