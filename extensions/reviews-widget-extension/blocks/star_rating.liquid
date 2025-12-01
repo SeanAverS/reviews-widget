@@ -1,6 +1,8 @@
-{% assign avg_rating = block.settings.product.metafields.demo.avg_rating.value | round %}
+{% comment %} Access "Average Rating" metafield {% endcomment %}
+{% assign avg_rating = block.settings.product.metafields.reviews.average_rating.value %}
+
 <span style="color:{{ block.settings.colour }}">
-  {% render 'stars', rating: avg_rating %}
+  {% render 'stars', rating: avg_rating | round %}
 </span>
 {% if avg_rating >= 4 %}
   <br>
@@ -18,4 +20,3 @@
   ]
 }
 {% endschema %}
-

@@ -87,7 +87,7 @@ app.get("/reviews/:productId", async (req, res) => {
 
   const { productId } = req.params;
   const token = app.locals.shopToken;
-  const shop = app.locals.shopDomain; 
+  const shop = app.locals.shopDomain;
 
   if (!token) return res.status(400).send("Install app first via /auth");
 
@@ -111,11 +111,45 @@ app.get("/reviews/:productId", async (req, res) => {
       (field) => field.namespace === "custom" && field.key === "star_ratings"
     );
 
+    // Calculate average rating
     const starRatings = starField?.value ? JSON.parse(starField.value) : [];
     const avgRating =
       starRatings.length > 0
         ? starRatings.reduce((a, b) => a + b, 0) / starRatings.length
         : 0;
+
+    // 2. Prepare data for "Average Rating" metafield 
+    const metafieldDataToSave = {
+      metafield: {
+        namespace: "reviews",               
+        key: "average_rating",               
+        value: avgRating.toFixed(1),         
+        type: "number_decimal",              
+        owner_resource: "product",
+        owner_id: productId              
+      }
+    };
+
+    // request to save average rating
+    try {
+      const metafieldSaveResponse = await fetch(
+        `https://${shop}/admin/api/2025-01/metafields.json`, // endpoint for creating/updating metafields
+        {
+          method: "POST", 
+          headers: {
+            "X-Shopify-Access-Token": token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(metafieldDataToSave),
+        }
+      );
+
+      if (!metafieldSaveResponse.ok) {
+          console.error("Failed to save average rating metafield:", await metafieldSaveResponse.text());
+      }
+    } catch (saveError) {
+      console.error("Error saving average rating metafield:", saveError);
+    }
 
     res.json({ starRatings, avgRating });
   } catch (err) {
