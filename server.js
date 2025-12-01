@@ -103,7 +103,6 @@ app.get("/reviews/:productId", async (req, res) => {
     );
 
     const metafieldData = await metafieldResponse.json();
-    console.log("Metafields:", metafieldData);
 
     // make sure metafields exists
     const metafields = metafieldData.metafields || [];
