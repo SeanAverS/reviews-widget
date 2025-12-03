@@ -22,6 +22,32 @@ app.use(
 
 app.use(express.json());
 
+// update a metafield
+async function updateMetafield(shop, token, productId, namespace, key, value, type) {
+    const payload = {
+        metafield: {
+            namespace,
+            key,
+            value,
+            type,
+            owner_resource: "product",
+            owner_id: productId
+        }
+    };
+    const response = await fetch(
+        `https://${shop}/admin/api/2025-01/metafields.json`,
+        {
+            method: "POST",
+            headers: { "X-Shopify-Access-Token": token, "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        }
+    );
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save metafield ${namespace}.${key}: ${errorText}`);
+    }
+}
+
 // OAuth after Shopify installion
 app.get("/", (req, res) => {
     const shop = req.query.shop;
@@ -118,35 +144,17 @@ app.get("/reviews/:productId", async (req, res) => {
         ? starRatings.reduce((a, b) => a + b, 0) / starRatings.length
         : 0;
 
-    // 2. Prepare data for "Average Rating" metafield 
-    const metafieldDataToSave = {
-      metafield: {
-        namespace: "reviews",               
-        key: "average_rating",               
-        value: avgRating.toFixed(1),         
-        type: "number_decimal",              
-        owner_resource: "product",
-        owner_id: productId              
-      }
-    };
-
-    // request to save average rating
+  // save average rating 
     try {
-      const metafieldSaveResponse = await fetch(
-        `https://${shop}/admin/api/2025-01/metafields.json`, // endpoint for creating/updating metafields
-        {
-          method: "POST", 
-          headers: {
-            "X-Shopify-Access-Token": token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(metafieldDataToSave),
-        }
+      await updateMetafield(
+        shop, 
+        token, 
+        productId, 
+        "reviews", 
+        "average_rating", 
+        avgRating.toFixed(1), 
+        "number_decimal"
       );
-
-      if (!metafieldSaveResponse.ok) {
-          console.error("Failed to save average rating metafield:", await metafieldSaveResponse.text());
-      }
     } catch (saveError) {
       console.error("Error saving average rating metafield:", saveError);
     }
@@ -158,6 +166,64 @@ app.get("/reviews/:productId", async (req, res) => {
   }
 });
 
+// submit and calculate new rating 
+app.post("/submit-rating", async (req, res) => {
+    const { productId, rating } = req.body;
+    const token = app.locals.shopToken;
+    const shop = app.locals.shopDomain;
 
+    if (!token || !productId || !rating || rating < 1 || rating > 5) {
+        return res.status(400).send("Missing data or app not installed/invalid rating.");
+    }
+
+    // fetch existing star ratings (custom.star_ratings)
+    try {
+        const rawMetafieldResponse = await fetch(
+            `https://${shop}/admin/api/2025-01/products/${productId}/metafields.json`,
+            {
+              headers: { "X-Shopify-Access-Token": token }
+            }
+        );
+        const rawMetafieldData = await rawMetafieldResponse.json();
+        const rawStarField = rawMetafieldData.metafields.find(
+            (field) => field.namespace === "custom" && field.key === "star_ratings"
+        );
+        const starRatings = rawStarField?.value ? JSON.parse(rawStarField.value) : [];
+        starRatings.push(rating); 
+
+        // recalculate and prepare new average rating
+        const totalStars = starRatings.reduce((a, b) => a + b, 0);
+        const newAvgRating = totalStars / starRatings.length;
+        const newAvgRatingString = newAvgRating.toFixed(1);
+
+        // update raw ratings (custom.star_ratings) 
+        await updateMetafield(
+            shop, 
+            token, 
+            productId, 
+            "custom", 
+            "star_ratings", 
+            JSON.stringify(starRatings), 
+            "json_string"
+        );
+
+        // update the average rating (reviews.average_rating)
+        await updateMetafield(
+            shop, 
+            token, 
+            productId, 
+            "reviews", 
+            "average_rating", 
+            newAvgRatingString, 
+            "number_decimal"
+        );
+
+        res.json({ success: true, newAvgRating: newAvgRatingString});
+
+    } catch (err) {
+        console.error("Error submitting rating:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
