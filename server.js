@@ -188,8 +188,17 @@ app.post("/submit-rating", async (req, res) => {
         const rawStarField = rawMetafieldData.metafields.find(
             (field) => field.namespace === "custom" && field.key === "star_ratings"
         );
-        const starRatings = rawStarField?.value ? JSON.parse(rawStarField.value) : [];
-        starRatings.push(rating); 
+        let starRatings = [];
+        if (rawStarField && rawStarField.value) {
+            try {
+                starRatings = JSON.parse(rawStarField.value); 
+            } catch (e) {
+                console.error("Error parsing existing starRatings JSON:", e.message);
+            }
+        }
+        
+        // Push the new rating (already verified as 1-5 integer by the controller)
+        starRatings.push(rating);
 
         // recalculate and prepare new average rating
         const totalStars = starRatings.reduce((a, b) => a + b, 0);
@@ -204,7 +213,7 @@ app.post("/submit-rating", async (req, res) => {
             "custom", 
             "star_ratings", 
             JSON.stringify(starRatings), 
-            "json_string"
+            "json"
         );
 
         // update the average rating (reviews.average_rating)
