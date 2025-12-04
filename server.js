@@ -14,7 +14,7 @@ app.locals.shopToken = savedToken;
 
 app.use(
   cors({
-    origin: ["http://localhost:3001", "https://sean-dev-2.myshopify.com"],
+    origin: ["http://localhost:3001", "https://sean-dev-2.myshopify.com", "http://127.0.0.1:9292"],
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
   })
