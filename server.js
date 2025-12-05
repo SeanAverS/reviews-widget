@@ -172,30 +172,30 @@ app.post("/submit-rating", async (req, res) => {
     const token = app.locals.shopToken;
     const shop = app.locals.shopDomain;
 
-    // --- START LOGGING BLOCK ---
-    const tokenMissing = !token;
-    const productIdMissing = !productId;
-    const ratingMissing = !rating; // True if rating is null, undefined, or 0
-    const ratingTooLow = rating < 1;
-    const ratingTooHigh = rating > 5;
+    // --- DEBUG LOGS ---
+    // const tokenMissing = !token;
+    // const productIdMissing = !productId;
+    // const ratingMissing = !rating; // True if rating is null, undefined, or 0
+    // const ratingTooLow = rating < 1;
+    // const ratingTooHigh = rating > 5;
 
-    console.log("--- SUBMISSION DEBUG START ---");
-    console.log(`Token Available: ${!!token}`);
-    console.log(`Product ID: ${productId}`);
-    console.log(`Rating Value: ${rating}`);
-    console.log(`Check 1: !token (${tokenMissing})`);
-    console.log(`Check 2: !productId (${productIdMissing})`);
-    console.log(`Check 3: !rating (${ratingMissing})`);
-    console.log(`Check 4: rating < 1 (${ratingTooLow})`);
-    console.log(`Check 5: rating > 5 (${ratingTooHigh})`);
+    // console.log("--- SUBMISSION DEBUG START ---");
+    // console.log(`Token Available: ${!!token}`);
+    // console.log(`Product ID: ${productId}`);
+    // console.log(`Rating Value: ${rating}`);
+    // console.log(`Check 1: !token (${tokenMissing})`);
+    // console.log(`Check 2: !productId (${productIdMissing})`);
+    // console.log(`Check 3: !rating (${ratingMissing})`);
+    // console.log(`Check 4: rating < 1 (${ratingTooLow})`);
+    // console.log(`Check 5: rating > 5 (${ratingTooHigh})`);
     
-    const fullCondition = tokenMissing || productIdMissing || ratingMissing || ratingTooLow || ratingTooHigh;
-    console.log(`FULL CONDITION RESULT: ${fullCondition}`);
-    console.log("--- SUBMISSION DEBUG END ---");
+    // const fullCondition = tokenMissing || productIdMissing || ratingMissing || ratingTooLow || ratingTooHigh;
+    // console.log(`FULL CONDITION RESULT: ${fullCondition}`);
+    // console.log("--- SUBMISSION DEBUG END ---");
     
-    if (fullCondition) {
-        return res.status(400).send("Missing data or app not installed/invalid rating.");
-    }
+    // if (fullCondition) {
+    //     return res.status(400).send("Missing data or app not installed/invalid rating.");
+    // }
 
     if (!token || !productId || !rating || rating < 1 || rating > 5) {
         return res.status(400).send("Missing data or app not installed/invalid rating.");
