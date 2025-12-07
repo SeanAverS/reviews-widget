@@ -1,0 +1,1 @@
+# A Shopify widget for star rating products 

@@ -8,13 +8,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Load Permanent Token from Railway Variables 
+// Set these variables in your Railway Project Settings!
+const PERMANENT_TOKEN = process.env.SHOPIFY_PERMANENT_TOKEN;
+const SHOPIFY_SHOP_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN; // e.g., 'sean-dev-2.myshopify.com'
+
+// Load saved token and domain on startup
+app.locals.shopToken = PERMANENT_TOKEN;
+app.locals.shopDomain = SHOPIFY_SHOP_DOMAIN;
+
 // load saved token on startup
-let savedToken = null;
-app.locals.shopToken = savedToken;
+// let savedToken = null;
+// app.locals.shopToken = savedToken;
 
 app.use(
   cors({
-    origin: ["http://localhost:3001", "https://sean-dev-2.myshopify.com", "http://127.0.0.1:9292"],
+    origin: ["http://localhost:3001", `https://${SHOPIFY_SHOP_DOMAIN}`, "http://127.0.0.1:9292"],
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
   })
@@ -115,7 +124,7 @@ app.get("/reviews/:productId", async (req, res) => {
   const token = app.locals.shopToken;
   const shop = app.locals.shopDomain;
 
-  if (!token) return res.status(400).send("Install app first via /auth");
+  // if (!token) return res.status(400).send("Install app first via /auth");
 
   try {
     const metafieldResponse = await fetch(
