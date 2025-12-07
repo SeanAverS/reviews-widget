@@ -216,19 +216,21 @@ app.post("/submit-rating", async (req, res) => {
         let starRatings = [];
         if (rawStarField && rawStarField.value) {
             try {
+                // Ensure correct parsing of the JSON array
                 starRatings = JSON.parse(rawStarField.value); 
             } catch (e) {
                 console.error("Error parsing existing starRatings JSON:", e.message);
             }
         }
         
-        // Push the new rating (already verified as 1-5 integer by the controller)
+        // Add and calculate new rating 
         starRatings.push(rating);
-
-        // recalculate and prepare new average rating
         const totalStars = starRatings.reduce((a, b) => a + b, 0);
-        const newAvgRating = totalStars / starRatings.length;
+        const totalRatings = starRatings.length;
+        
+        const newAvgRating = totalStars / totalRatings;
         const newAvgRatingString = newAvgRating.toFixed(1);
+        const totalRatingsString = totalRatings.toString(); 
 
         // update raw ratings (custom.star_ratings) 
         await updateMetafield(
@@ -251,8 +253,19 @@ app.post("/submit-rating", async (req, res) => {
             newAvgRatingString, 
             "number_decimal"
         );
+        
+        // Update the total rating count (reviews.total_ratings) 
+        await updateMetafield(
+            shop, 
+            token, 
+            productId, 
+            "reviews", 
+            "total_ratings", 
+            totalRatingsString, 
+            "number_integer" 
+        );
 
-        res.json({ success: true, newAvgRating: newAvgRatingString});
+        res.json({ success: true, newAvgRating: newAvgRatingString, totalRatings: totalRatings}); 
 
     } catch (err) {
         console.error("Error submitting rating:", err);
