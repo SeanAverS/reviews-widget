@@ -57,6 +57,17 @@ async function updateMetafield(shop, token, productId, namespace, key, value, ty
     }
 }
 
+// Temporariy Debug Endpoint 
+app.get("/token", (req, res) => {
+    const token = app.locals.shopToken;
+    if (token) {
+        res.send(`Your permanent Shopify Access Token is: ${token}`);
+    } else {
+        res.status(404).send("Token not yet received. Complete the /auth flow first.");
+    }
+});
+// ---------------------------------
+
 // OAuth after Shopify installion
 app.get("/", (req, res) => {
     const shop = req.query.shop;
