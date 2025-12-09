@@ -3,14 +3,24 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Load saved token and domain on startup
-let savedToken = null; 
-let shopDomain = null; 
+// MongoDB connection 
+mongoose.connect(process.env.MONGODB_URI) // Railway variable 
+  .then(() => console.log('Connected to MongoDB!'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Shop credentials Schema 
+const shopSchema = new mongoose.Schema({
+    shopDomain: { type: String, required: true, unique: true }, 
+    accessToken: { type: String, required: true },
+}, { timestamps: true });
+
+const Shop = mongoose.model('Shop', shopSchema);
 
 app.use(
   cors({
@@ -48,15 +58,6 @@ async function updateMetafield(shop, token, productId, namespace, key, value, ty
     }
 }
 
-app.get("/token", (req, res) => {
-    const token = app.locals.shopToken;
-    if (token) {
-        res.send(`Your permanent Shopify Access Token is: ${token}`);
-    } else {
-        res.status(404).send("Token not yet received. Complete the /auth flow first.");
-    }
-});
-
 // OAuth after Shopify installion
 app.get("/", (req, res) => {
     const shop = req.query.shop;
@@ -82,7 +83,7 @@ app.get("/auth", (req, res) => {
   res.redirect(installUrl);
 });
 
-// OAuth callback
+// OAuth callback 
 app.get("/auth/callback", async (req, res) => {
   const { shop, code } = req.query;
   if (!shop || !code) return res.status(400).send("Missing parameters");
@@ -103,128 +104,56 @@ app.get("/auth/callback", async (req, res) => {
     );
 
     const tokenData = await tokenResponse.json();
-    app.locals.shopToken = tokenData.access_token;
-    app.locals.shopDomain = shop;
+    const accessToken = tokenData.access_token; 
 
-    res.send("App installed! Reviews endpoint now working.");
+    // save token and shop domain to MongoDB 
+    await Shop.findOneAndUpdate(
+        { shopDomain: shop }, 
+        { accessToken: accessToken }, 
+        { upsert: true, new: true, setDefaultsOnInsert: true } 
+    );
+
+    res.send("App installed! Credentials saved to database. Reviews endpoint now working.");
   } catch (err) {
-    console.error(err);
+    console.error("OAuth failed:", err);
     res.status(500).send("OAuth failed");
-  }
-});
-
-// Fetch star ratings with OAuth token 
-app.get("/reviews/:productId", async (req, res) => {
-  res.set({
-    "Cache-Control": "no-store",
-    "Pragma": "no-cache",
-    "Expires": "0",
-  });
-
-  const { productId } = req.params;
-  const token = app.locals.shopToken;
-  const shop = app.locals.shopDomain;
-
-//  if (!token) { // railway failsafe https://reviews-widget-production.up.railway.app/auth/callback
-//       return res.status(503).send("Server initialization error: Shopify token unavailable.");
-//   }
-
-  try {
-    const metafieldResponse = await fetch(
-      `https://${shop}/admin/api/2025-01/products/${productId}/metafields.json`,
-      {
-        headers: {
-          "X-Shopify-Access-Token": token,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const metafieldData = await metafieldResponse.json();
-
-    // make sure metafields exists
-    const metafields = metafieldData.metafields || [];
-
-    const starField = metafields.find(
-      (field) => field.namespace === "custom" && field.key === "star_ratings"
-    );
-
-    // Calculate average rating
-    const starRatings = starField?.value ? JSON.parse(starField.value) : [];
-    const avgRating =
-      starRatings.length > 0
-        ? starRatings.reduce((a, b) => a + b, 0) / starRatings.length
-        : 0;
-
-  // save average rating 
-    try {
-      await updateMetafield(
-        shop, 
-        token, 
-        productId, 
-        "reviews", 
-        "average_rating", 
-        avgRating.toFixed(1), 
-        "number_decimal"
-      );
-    } catch (saveError) {
-      console.error("Error saving average rating metafield:", saveError);
-    }
-
-    res.json({ starRatings, avgRating });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
   }
 });
 
 // submit and calculate new rating 
 app.post("/submit-rating", async (req, res) => {
-    const { productId, rating } = req.body;
-    const token = app.locals.shopToken;
-    const shop = app.locals.shopDomain;
+    // get shopDomain from request body (Liquid frontend)
+    const { productId, rating, shopDomain } = req.body; 
 
-    // --- DEBUG LOGS ---
-    // const tokenMissing = !token;
-    // const productIdMissing = !productId;
-    // const ratingMissing = !rating; // True if rating is null, undefined, or 0
-    // const ratingTooLow = rating < 1;
-    // const ratingTooHigh = rating > 5;
-
-    // console.log("--- SUBMISSION DEBUG START ---");
-    // console.log(`Token Available: ${!!token}`);
-    // console.log(`Product ID: ${productId}`);
-    // console.log(`Rating Value: ${rating}`);
-    // console.log(`Check 1: !token (${tokenMissing})`);
-    // console.log(`Check 2: !productId (${productIdMissing})`);
-    // console.log(`Check 3: !rating (${ratingMissing})`);
-    // console.log(`Check 4: rating < 1 (${ratingTooLow})`);
-    // console.log(`Check 5: rating > 5 (${ratingTooHigh})`);
+    // look up MongoDB credentials 
+    const shopEntry = await Shop.findOne({ shopDomain: shopDomain });
     
-    // const fullCondition = tokenMissing || productIdMissing || ratingMissing || ratingTooLow || ratingTooHigh;
-    // console.log(`FULL CONDITION RESULT: ${fullCondition}`);
-    // console.log("--- SUBMISSION DEBUG END ---");
+    if (!shopEntry) {
+        return res.status(401).send("App not installed on this shop.");
+    }
     
-    // if (fullCondition) {
-    //     return res.status(400).send("Missing data or app not installed/invalid rating.");
-    // }
-
-    if (!token || !productId || !rating || rating < 1 || rating > 5) {
-        return res.status(400).send("Missing data or app not installed/invalid rating.");
+    // MongoDB variables 
+    const token = shopEntry.accessToken; 
+    const shop = shopDomain; 
+    
+    if (!productId || !rating || rating < 1 || rating > 5) {
+        return res.status(400).send("Missing product ID or invalid rating (must be 1-5).");
     }
 
-    // fetch existing star ratings (custom.star_ratings)
     try {
+        // fetch existing star ratings (custom.star_ratings)
         const rawMetafieldResponse = await fetch(
             `https://${shop}/admin/api/2025-01/products/${productId}/metafields.json`,
             {
               headers: { "X-Shopify-Access-Token": token }
             }
         );
+
         const rawMetafieldData = await rawMetafieldResponse.json();
         const rawStarField = rawMetafieldData.metafields.find(
-            (field) => field.namespace === "custom" && field.key === "star_ratings"
+          (field) => field.namespace === "custom" && field.key === "star_ratings"
         );
+        
         let starRatings = [];
         if (rawStarField && rawStarField.value) {
             try {
