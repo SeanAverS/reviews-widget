@@ -210,7 +210,7 @@ app.post("/submit-rating", async (req, res) => {
 
 // handle database connection and server startup
 async function startServer() {
-    const mongoUri = process.env.MONGODB_URI;
+    const mongoUri = 'mongodb+srv://reviews_widget_user:aerosmith34567@reviewscluster.ogskxw7.mongodb.net/shopify-reviews?retryWrites=true&w=majority';
 
     if (!mongoUri) {
         console.error("FATAL ERROR: MONGODB_URI environment variable is missing!");
