@@ -1,11 +1,9 @@
 import express from "express";
 import fetch from "node-fetch";
-import dotenv from "dotenv";
 import cors from "cors";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
