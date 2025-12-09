@@ -9,10 +9,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MongoDB connection 
-mongoose.connect(process.env.MONGODB_URI) // Railway variable 
-  .then(() => console.log('Connected to MongoDB!'))
-  .catch(err => console.error('MongoDB connection error:', err));
 
 // Shop credentials Schema 
 const shopSchema = new mongoose.Schema({
@@ -214,4 +210,30 @@ app.post("/submit-rating", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// handle database connection and server startup
+async function startServer() {
+    const mongoUri = process.env.MONGODB_URI;
+
+    if (!mongoUri) {
+        console.error("FATAL ERROR: MONGODB_URI environment variable is missing!");
+        console.error("Check Railway Shared Variables spelling: MONGODB_URI");
+        process.exit(1); 
+    }
+
+    try {
+        console.log('Attempting to connect to MongoDB...');
+        await mongoose.connect(mongoUri);
+        console.log('Successfully connected to MongoDB!');
+
+        // Start Express ONLY after database connects
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+    } catch (err) {
+        console.error('Failed to start server due to MongoDB connection error:', err);
+        process.exit(1);
+    }
+}
+
+startServer();
